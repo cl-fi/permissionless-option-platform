@@ -2,6 +2,8 @@
 
 Static SPA for the [Permissionless Option Platform](../README.md) on Sui testnet.
 
+**Live:** https://permissionless-option-platform.vercel.app/
+
 ## Stack
 
 - Vite + React + TypeScript + Tailwind

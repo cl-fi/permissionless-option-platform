@@ -4,7 +4,11 @@ A Sui-based protocol where anyone can create, write, and exercise fully-collater
 
 ## Live demo
 
-Deploy the frontend from `frontend/` to Vercel (see [frontend/README.md](frontend/README.md)).
+**https://permissionless-option-platform.vercel.app/**
+
+Connect a wallet on **Sui Testnet**, then use the Faucet → Create → Write → Exercise flow (see [frontend/README.md](frontend/README.md)).
+
+To redeploy: connect the `frontend/` directory as the Vercel project root (`vercel.json` handles SPA routing).
 
 ## Architecture
 
