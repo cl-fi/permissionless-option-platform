@@ -135,7 +135,9 @@ export function CreatePage() {
     })
 
     try {
-      const result = await tx.execute(() => buildPublishOptionCoinTx(patched.moduleBytes))
+      const result = await tx.execute(() =>
+        buildPublishOptionCoinTx(patched.moduleBytes, account.address),
+      )
       const txBlock = await client.getTransactionBlock({
         digest: result.digest,
         options: { showObjectChanges: true },

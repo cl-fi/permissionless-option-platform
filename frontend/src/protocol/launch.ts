@@ -83,16 +83,20 @@ export async function patchOptionCoinTemplate(
   return { moduleBytes: bytes, otwName, moduleName, symbol: input.symbol }
 }
 
-export function buildPublishOptionCoinTx(moduleBytes: Uint8Array): Transaction {
+export function buildPublishOptionCoinTx(
+  moduleBytes: Uint8Array,
+  sender: string,
+): Transaction {
   const tx = new Transaction()
   tx.setGasBudget(200_000_000n)
-  tx.publish({
+  const [upgradeCap] = tx.publish({
     modules: [Array.from(moduleBytes)],
     dependencies: [
       '0x0000000000000000000000000000000000000000000000000000000000000001',
       '0x0000000000000000000000000000000000000000000000000000000000000002',
     ],
   })
+  tx.transferObjects([upgradeCap], tx.pure.address(sender))
   return tx
 }
 

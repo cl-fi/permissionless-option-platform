@@ -64,14 +64,15 @@ async function main() {
   )
 
   const publishTx = new Transaction()
-  publishTx.setGasBudget(50_000_000n)
-  publishTx.publish({
+  publishTx.setGasBudget(200_000_000n)
+  const [upgradeCap] = publishTx.publish({
     modules: [Array.from(bytes)],
     dependencies: [
       '0x0000000000000000000000000000000000000000000000000000000000000001',
       '0x0000000000000000000000000000000000000000000000000000000000000002',
     ],
   })
+  publishTx.transferObjects([upgradeCap], publishTx.pure.address(sender))
 
   const publishResult = await client.signAndExecuteTransaction({
     signer: keypair,

@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { buildInitOptionVaultTx } from './launch'
+import { buildInitOptionVaultTx, buildPublishOptionCoinTx } from './launch'
 import { TOKENSMITH_PACKAGE_ID } from './config'
 
 const TREASURY_CAP =
   '0x0000000000000000000000000000000000000000000000000000000000000abc'
+
+describe('buildPublishOptionCoinTx', () => {
+  it('transfers the UpgradeCap so publish does not fail with UnusedValueWithoutDrop', () => {
+    const sender =
+      '0x0000000000000000000000000000000000000000000000000000000000000abc'
+    const tx = buildPublishOptionCoinTx(new Uint8Array([1, 2, 3]), sender)
+    const data = tx.getData() as {
+      commands: Array<{ Publish?: unknown; TransferObjects?: unknown }>
+    }
+    expect(data.commands).toHaveLength(2)
+    expect(data.commands[0]).toHaveProperty('Publish')
+    expect(data.commands[1]).toHaveProperty('TransferObjects')
+  })
+})
 
 describe('buildInitOptionVaultTx', () => {
   it('targets init_option_vault with correct type args and shape', () => {
