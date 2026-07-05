@@ -2,3 +2,7 @@ integration_test/node_modules
 tokensmith/build
 mock_coin/build
 mock_option/build
+.agents/
+.claude/
+.env
+
