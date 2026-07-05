@@ -4,9 +4,9 @@ import { patchOptionCoinTemplate } from './launch'
 import { hexToBytes, OPTION_COIN_TEMPLATE_HEX } from './template'
 
 describe('patchOptionCoinTemplate', () => {
-  it('patches identifiers and produces distinct bytecode', () => {
+  it('patches identifiers and produces distinct bytecode', async () => {
     init()
-    const result = patchOptionCoinTemplate({
+    const result = await patchOptionCoinTemplate({
       otwName: 'TSDEMO01',
       symbol: 'TSD65000C',
       decimals: 6,

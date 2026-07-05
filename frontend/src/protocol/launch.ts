@@ -4,6 +4,7 @@ import {
   update_constants,
   update_identifiers,
 } from '@mysten/move-bytecode-template'
+import { ensureBytecodeTemplateReady } from './bytecode-init'
 import {
   CLOCK_OBJECT_ID,
   MARKETPLACE_OBJECT_ID,
@@ -35,9 +36,11 @@ export interface PatchOptionCoinResult {
 }
 
 /** Patch the Option Coin template module for a new Series. */
-export function patchOptionCoinTemplate(
+export async function patchOptionCoinTemplate(
   input: PatchOptionCoinInput,
-): PatchOptionCoinResult {
+): Promise<PatchOptionCoinResult> {
+  await ensureBytecodeTemplateReady()
+
   const otwName = input.otwName.toUpperCase().replace(/[^A-Z0-9_]/g, '')
   const moduleName = otwName.toLowerCase()
   if (!otwName || otwName.length < 3) {
@@ -82,6 +85,7 @@ export function patchOptionCoinTemplate(
 
 export function buildPublishOptionCoinTx(moduleBytes: Uint8Array): Transaction {
   const tx = new Transaction()
+  tx.setGasBudget(200_000_000n)
   tx.publish({
     modules: [Array.from(moduleBytes)],
     dependencies: [
@@ -106,6 +110,7 @@ export interface InitVaultParams {
 
 export function buildInitOptionVaultTx(params: InitVaultParams): Transaction {
   const tx = new Transaction()
+  tx.setGasBudget(50_000_000n)
   tx.moveCall({
     target: `${TOKENSMITH_PACKAGE_ID}::tokensmith::init_option_vault`,
     typeArguments: [

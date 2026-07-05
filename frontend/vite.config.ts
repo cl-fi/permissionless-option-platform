@@ -5,6 +5,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  assetsInclude: ['**/*.wasm'],
+  optimizeDeps: {
+    exclude: ['@mysten/move-bytecode-template'],
+  },
   test: {
     include: ['src/protocol/**/*.test.ts'],
     environment: 'node',

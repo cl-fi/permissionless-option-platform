@@ -26,6 +26,7 @@ import {
   type LaunchDraft,
   type OptionDirection,
 } from '../protocol'
+import { ensureBytecodeTemplateReady } from '../protocol/bytecode-init'
 import { extractPublishOptionCoinResult, findVaultOwnerId } from '../protocol/tx-parse'
 import { TxFeedback } from '../components/TxFeedback'
 import { useTransactionExecution } from '../hooks/useTransactionExecution'
@@ -55,6 +56,10 @@ export function CreatePage() {
     if (saved?.treasuryCapId && saved?.publishedPackageId) {
       setDraft(saved)
     }
+  }, [])
+
+  useEffect(() => {
+    void ensureBytecodeTemplateReady()
   }, [])
 
   const defaultCoins = useQuery({
@@ -123,7 +128,7 @@ export function CreatePage() {
     }
 
     setStep('publish')
-    const patched = patchOptionCoinTemplate({
+    const patched = await patchOptionCoinTemplate({
       otwName,
       symbol,
       decimals: coins.underlying.decimals,
@@ -146,8 +151,11 @@ export function CreatePage() {
       setDraft(updated)
       setStep('vault')
       await handleCreateVault(updated)
-    } catch {
+    } catch (err) {
       setStep('form')
+      setCoinError(
+        err instanceof Error ? err.message : tx.error ?? 'Series Launch failed',
+      )
     }
   }
 
