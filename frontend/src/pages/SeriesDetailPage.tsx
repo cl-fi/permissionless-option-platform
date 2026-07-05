@@ -189,6 +189,12 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
   async function runWritePut() {
     if (!vaultOwner) return
     const amount = parseAmount(writeAmount, series!.underlying.decimals)
+    const collateralAmount = putCollateralRequired(
+      amount,
+      series!.strike,
+      series!.underlying.decimals,
+      series!.settlement.decimals,
+    )
     const coinId = await getPrimaryCoin(series!.settlement.coinType)
     await tx.execute(() =>
       buildWriteCoveredPutTx({
@@ -198,6 +204,7 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
         optionCoinType: series!.optionCoinType,
         collateralCoinId: coinId,
         optionAmount: amount,
+        collateralAmount,
       }),
     )
   }

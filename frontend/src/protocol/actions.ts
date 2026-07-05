@@ -45,10 +45,18 @@ export interface WritePutParams {
   optionCoinType: string
   collateralCoinId: string
   optionAmount: bigint
+  /** When set, splits this settlement amount from the coin before Write. */
+  collateralAmount?: bigint
 }
 
 export function buildWriteCoveredPutTx(params: WritePutParams): Transaction {
   const tx = new Transaction()
+  const collateralArg =
+    params.collateralAmount !== undefined
+      ? tx.splitCoins(tx.object(params.collateralCoinId), [
+          tx.pure.u64(params.collateralAmount),
+        ])[0]
+      : tx.object(params.collateralCoinId)
   tx.moveCall({
     target: `${TOKENSMITH_PACKAGE_ID}::tokensmith::write_covered_put`,
     typeArguments: [
@@ -60,7 +68,7 @@ export function buildWriteCoveredPutTx(params: WritePutParams): Transaction {
       tx.object(MARKETPLACE_OBJECT_ID),
       tx.object(params.vaultOwnerId),
       tx.object(CLOCK_OBJECT_ID),
-      tx.object(params.collateralCoinId),
+      collateralArg,
       tx.pure.u64(params.optionAmount),
     ],
   })

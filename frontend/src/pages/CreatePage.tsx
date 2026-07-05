@@ -23,6 +23,7 @@ import {
   loadLaunchDraft,
   parseAmount,
   patchOptionCoinTemplate,
+  putCollateralRequired,
   saveLaunchDraft,
   validateCoinType,
   validateLaunchExpiry,
@@ -227,6 +228,13 @@ export function CreatePage() {
         }),
       )
     } else {
+      const strikeFraction = humanPriceToFraction(strike)
+      const collateralAmount = putCollateralRequired(
+        amount,
+        strikeFraction,
+        coins.underlying.decimals,
+        coins.settlement.decimals,
+      )
       await tx.execute(() =>
         buildWriteCoveredPutTx({
           vaultOwnerId: createdVaultOwnerId,
@@ -235,6 +243,7 @@ export function CreatePage() {
           optionCoinType: createdOptionCoinType,
           collateralCoinId: coin.coinObjectId,
           optionAmount: amount,
+          collateralAmount,
         }),
       )
     }

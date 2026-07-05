@@ -20,6 +20,23 @@ function firstMoveCall(tx: ReturnType<typeof buildExerciseCallTx>) {
 }
 
 describe('lifecycle transaction builders', () => {
+  it('buildWriteCoveredPutTx splits exact collateral before write_covered_put', () => {
+    const tx = buildWriteCoveredPutTx({
+      vaultOwnerId: OWNER,
+      assetCoinType: ASSET,
+      settlementCoinType: SETTLE,
+      optionCoinType: OPT,
+      collateralCoinId: OWNER,
+      optionAmount: 100_000_000n,
+      collateralAmount: 1_000_000_000n,
+    })
+    const data = tx.getData() as {
+      commands: Array<{ SplitCoins?: unknown; MoveCall?: { function: string } }>
+    }
+    expect(data.commands[0]).toHaveProperty('SplitCoins')
+    expect(data.commands[1]?.MoveCall?.function).toBe('write_covered_put')
+  })
+
   it('buildWriteCoveredPutTx targets write_covered_put', () => {
     const call = firstMoveCall(
       buildWriteCoveredPutTx({
