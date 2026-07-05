@@ -1,10 +1,12 @@
-import { useSuiClient } from '@mysten/dapp-kit'
+import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { formatAmount } from '../protocol/amounts'
 import {
+  coinTypesEqual,
   encodeSeriesId,
   fetchAllSeries,
+  fetchVaultOwnersForAddress,
   filterSeries,
   sortSeries,
   type SeriesSortKey,
@@ -15,6 +17,7 @@ import { useMemo, useState } from 'react'
 import type { LifecycleState, OptionDirection } from '../protocol/types'
 
 export function MarketplacePage() {
+  const account = useCurrentAccount()
   const client = useSuiClient()
   const [direction, setDirection] = useState<OptionDirection | 'all'>('all')
   const [lifecycle, setLifecycle] = useState<LifecycleState | 'all'>('all')
@@ -23,6 +26,12 @@ export function MarketplacePage() {
   const { data: series = [], isPending } = useQuery({
     queryKey: ['series'],
     queryFn: () => fetchAllSeries(client),
+  })
+
+  const { data: myVaultOwners = [] } = useQuery({
+    queryKey: ['vault-owners', account?.address],
+    queryFn: () => fetchVaultOwnersForAddress(client, account!.address),
+    enabled: !!account,
   })
 
   const underlyings = useMemo(
@@ -105,16 +114,28 @@ export function MarketplacePage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        {filtered.map((s) => (
+        {filtered.map((s) => {
+          const isMine = myVaultOwners.some((v) => coinTypesEqual(v.optionCoinType, s.optionCoinType))
+          const writeLink =
+            isMine && s.lifecycle === 'pre_expiry'
+              ? `?action=write`
+              : ''
+          return (
           <Link
             key={s.optionCoinType}
-            to={`/series/${encodeSeriesId(s.optionCoinType)}`}
+            to={`/series/${encodeSeriesId(s.optionCoinType)}${writeLink}`}
             className="card block no-underline transition hover:border-accent/40"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-wrap gap-2">
                 <DirectionBadge direction={s.direction} />
                 <LifecycleBadge state={s.lifecycle} />
+                {isMine && (
+                  <span className="badge bg-accent/15 text-accent">Yours</span>
+                )}
+                {isMine && s.lifecycle === 'pre_expiry' && (
+                  <span className="badge bg-surface-overlay text-white">Write →</span>
+                )}
               </div>
               <span className="text-xs text-muted">{s.underlying.symbol}</span>
             </div>
@@ -149,7 +170,8 @@ export function MarketplacePage() {
               </div>
             </dl>
           </Link>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

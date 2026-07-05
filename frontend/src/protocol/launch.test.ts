@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { buildInitOptionVaultTx, buildPublishOptionCoinTx } from './launch'
+import {
+  buildInitOptionVaultTx,
+  buildPublishOptionCoinTx,
+  dateTimeLocalValueToExpiryMs,
+  expiryPresets,
+  expiryToDateTimeLocalValue,
+  validateLaunchExpiry,
+} from './launch'
 import { TOKENSMITH_PACKAGE_ID } from './config'
 
 const TREASURY_CAP =
@@ -51,5 +58,24 @@ describe('buildInitOptionVaultTx', () => {
     expect(call.function).toBe('init_option_vault')
     expect(call.typeArguments).toHaveLength(3)
     expect(call.arguments).toHaveLength(9)
+  })
+})
+
+describe('launch expiry helpers', () => {
+  it('round-trips datetime-local values at minute precision', () => {
+    const expiryMs = 1_700_000_000_000n - (1_700_000_000_000n % 60_000n)
+    const value = expiryToDateTimeLocalValue(expiryMs)
+    expect(dateTimeLocalValueToExpiryMs(value)).toBe(expiryMs)
+  })
+
+  it('rejects expiry in the past', () => {
+    expect(validateLaunchExpiry(1000n, 2000n)).toMatch(/future/)
+    expect(validateLaunchExpiry(3000n, 2000n)).toBeNull()
+  })
+
+  it('includes a one-month preset for advanced launches', () => {
+    const now = 1_700_000_000_000
+    const labels = expiryPresets(now).map((p) => p.label)
+    expect(labels).toContain('1 month')
   })
 })

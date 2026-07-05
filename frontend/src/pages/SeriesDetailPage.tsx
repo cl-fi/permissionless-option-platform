@@ -1,7 +1,7 @@
 import { useCurrentAccount, useSuiClient } from '@mysten/dapp-kit'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   buildClaimProceedsTx,
   buildExerciseCallTx,
@@ -12,6 +12,7 @@ import {
   buildWriteCoveredCallTx,
   buildWriteCoveredPutTx,
   callExercisePayment,
+  coinTypesEqual,
   decodeSeriesId,
   fetchSeriesByOptionCoinType,
   fetchVaultOwnersForAddress,
@@ -55,6 +56,7 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
   const [exerciseAmount, setExerciseAmount] = useState('1')
   const [transferTo, setTransferTo] = useState('')
   const [inlineError, setInlineError] = useState<string | null>(null)
+  const writeSectionRef = useRef<HTMLDivElement>(null)
 
   async function runAction(action: () => Promise<void>) {
     setInlineError(null)
@@ -70,13 +72,15 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
     queryFn: () => fetchSeriesByOptionCoinType(client, optionCoinType),
   })
 
-  const { data: vaultOwners = [] } = useQuery({
+  const { data: vaultOwners = [], isPending: vaultOwnersPending } = useQuery({
     queryKey: ['vault-owners', account?.address],
     queryFn: () => fetchVaultOwnersForAddress(client, account!.address),
     enabled: !!account,
   })
 
-  const vaultOwner = vaultOwners.find((v) => v.optionCoinType === optionCoinType)
+  const vaultOwner = vaultOwners.find((v) => coinTypesEqual(v.optionCoinType, optionCoinType))
+  const isCreator =
+    !!account && series?.writer.toLowerCase() === account.address.toLowerCase()
 
   const { data: optionBalance } = useQuery({
     queryKey: ['balance', account?.address, optionCoinType],
@@ -126,6 +130,12 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
     }
   }, [series, writeAmount])
 
+  useEffect(() => {
+    if (highlight === 'write' && writeSectionRef.current) {
+      writeSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlight, series, vaultOwners])
+
   if (isPending) return <p className="text-muted">Loading Series…</p>
   if (!series) {
     return (
@@ -144,6 +154,14 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
   const canClaim =
     isWriter && (series.lifecycle === 'exercise_window' || series.lifecycle === 'withdrawal_open')
   const canWithdrawRemaining = isWriter && series.lifecycle === 'withdrawal_open'
+  const hasActions =
+    canWrite ||
+    canUnwind ||
+    canExercise ||
+    canClaim ||
+    canWithdrawRemaining ||
+    (isHolder && series.lifecycle === 'pre_expiry') ||
+    (isWriter && series.lifecycle === 'exercise_window')
 
   async function getPrimaryCoin(coinType: string) {
     const coins = await client.getCoins({ owner: account!.address, coinType })
@@ -375,11 +393,48 @@ export function SeriesDetailPage({ optionCoinTypeParam }: { optionCoinTypeParam:
         </div>
 
         <div className="space-y-4">
+          {!account && (
+            <div className="card">
+              <h2 className="font-semibold text-white">Actions</h2>
+              <p className="mt-2 text-sm text-muted">
+                Connect your wallet to write collateral or manage Option Coin positions.
+              </p>
+            </div>
+          )}
+
+          {account && isCreator && !isWriter && !vaultOwnersPending && (
+            <div className="card border-warning/40">
+              <h2 className="font-semibold text-white">Writer access</h2>
+              <p className="mt-2 text-sm text-muted">
+                This Series was launched from your wallet, but your VaultOwner object
+                could not be loaded. Open{' '}
+                <Link to="/portfolio" className="text-accent">
+                  Portfolio
+                </Link>{' '}
+                and try again.
+              </p>
+            </div>
+          )}
+
+          {account && !hasActions && !isCreator && (
+            <div className="card">
+              <h2 className="font-semibold text-white">Actions</h2>
+              <p className="mt-2 text-sm text-muted">
+                Write, Exercise, and Unwind appear here when your wallet owns the Vault
+                (Writer) or Option Coins (Holder) for this Series.
+              </p>
+            </div>
+          )}
+
           {canWrite && (
             <div
+              ref={writeSectionRef}
               className={`card ${highlight === 'write' ? 'ring-2 ring-accent' : ''}`}
             >
               <h2 className="font-semibold text-white">Write</h2>
+              <p className="mt-1 text-sm text-muted">
+                Deposit collateral to mint more Option Coins for this Series.
+              </p>
               <input
                 className="input mt-3"
                 value={writeAmount}

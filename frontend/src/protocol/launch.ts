@@ -207,5 +207,28 @@ export function expiryPresets(nowMs = Date.now()): Array<{
     { label: '1 hour', expiryMs: BigInt(nowMs + 3_600_000) },
     { label: '1 day', expiryMs: BigInt(nowMs + 86_400_000) },
     { label: '1 week', expiryMs: BigInt(nowMs + 7 * 86_400_000) },
+    { label: '1 month', expiryMs: BigInt(nowMs + 30 * 86_400_000) },
   ]
+}
+
+/** Format expiry for `<input type="datetime-local" />` in local time. */
+export function expiryToDateTimeLocalValue(expiryMs: bigint): string {
+  const date = new Date(Number(expiryMs))
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+export function dateTimeLocalValueToExpiryMs(value: string): bigint | null {
+  if (!value.trim()) return null
+  const parsed = Date.parse(value)
+  if (Number.isNaN(parsed)) return null
+  return BigInt(parsed)
+}
+
+export function validateLaunchExpiry(
+  expiryMs: bigint,
+  nowMs = BigInt(Date.now()),
+): string | null {
+  if (expiryMs <= nowMs) return 'Expiry must be in the future.'
+  return null
 }

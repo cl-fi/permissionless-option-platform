@@ -14,6 +14,8 @@ import {
   clearLaunchDraft,
   encodeSeriesId,
   expiryPresets,
+  dateTimeLocalValueToExpiryMs,
+  expiryToDateTimeLocalValue,
   fetchCoinInfoFromChain,
   generateOptionSymbol,
   generateOtwName,
@@ -23,6 +25,7 @@ import {
   patchOptionCoinTemplate,
   saveLaunchDraft,
   validateCoinType,
+  validateLaunchExpiry,
   type LaunchDraft,
   type OptionDirection,
 } from '../protocol'
@@ -105,6 +108,7 @@ export function CreatePage() {
   }, [advancedCoins.error])
 
   const coins = advanced ? advancedCoins.data : defaultCoins.data
+  const expiryError = validateLaunchExpiry(expiryMs)
 
   const resumeOffer = draft && draft.treasuryCapId && account?.address
 
@@ -283,10 +287,13 @@ export function CreatePage() {
     return (
       <div className="max-w-xl">
         <h1 className="text-2xl font-bold text-white">Series launched</h1>
-        <p className="mt-2 text-muted">Your Vault is live on the Marketplace.</p>
+        <p className="mt-2 text-muted">
+          Your Vault is live on the Marketplace. You can keep writing collateral any time
+          from Portfolio or the Series page.
+        </p>
         {createdVaultOwnerId && coins && createdOptionCoinType && (
           <div className="mt-6 card">
-            <p className="text-sm font-medium text-white">Write your first collateral</p>
+            <p className="text-sm font-medium text-white">Write collateral now (optional)</p>
             <div className="mt-3 flex gap-3">
               <input
                 className="input"
@@ -305,12 +312,17 @@ export function CreatePage() {
           </div>
         )}
         {createdOptionCoinType && (
-          <Link
-            to={`/series/${encodeSeriesId(createdOptionCoinType)}`}
-            className="btn-secondary mt-4 inline-flex"
-          >
-            View Series
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to={`/series/${encodeSeriesId(createdOptionCoinType)}?action=write`}
+              className="btn-primary inline-flex"
+            >
+              Continue writing
+            </Link>
+            <Link to="/portfolio" className="btn-secondary inline-flex">
+              Open Portfolio
+            </Link>
+          </div>
         )}
         <TxFeedback {...tx} explorerUrl={tx.explorerUrl} />
       </div>
@@ -390,23 +402,59 @@ export function CreatePage() {
 
         <div>
           <label className="text-sm text-muted">Expiry</label>
-          <select
-            className="input mt-1"
-            value={String(expiryMs)}
-            onChange={(e) => setExpiryMs(BigInt(e.target.value))}
-          >
-            {expiryPresets().map((p) => (
-              <option key={p.label} value={String(p.expiryMs)}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          {advanced ? (
+            <div className="mt-1 space-y-3">
+              <input
+                type="datetime-local"
+                className="input"
+                value={expiryToDateTimeLocalValue(expiryMs)}
+                onChange={(e) => {
+                  const parsed = dateTimeLocalValueToExpiryMs(e.target.value)
+                  if (parsed) setExpiryMs(parsed)
+                }}
+              />
+              <div className="flex flex-wrap gap-2">
+                {expiryPresets().map((p) => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    className="rounded-lg border border-border px-2.5 py-1 text-xs text-muted transition hover:border-accent hover:text-white"
+                    onClick={() => setExpiryMs(p.expiryMs)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted">
+                Expires {new Date(Number(expiryMs)).toLocaleString()} (local time)
+              </p>
+              {expiryError && <p className="text-xs text-danger">{expiryError}</p>}
+            </div>
+          ) : (
+            <select
+              className="input mt-1"
+              value={String(expiryMs)}
+              onChange={(e) => setExpiryMs(BigInt(e.target.value))}
+            >
+              {expiryPresets().map((p) => (
+                <option key={p.label} value={String(p.expiryMs)}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <button
           type="button"
           className="btn-primary w-full"
-          disabled={!coins || !!coinError || tx.phase === 'signing' || tx.phase === 'executing'}
+          disabled={
+            !coins ||
+            !!coinError ||
+            !!expiryError ||
+            tx.phase === 'signing' ||
+            tx.phase === 'executing'
+          }
           onClick={() => void handleLaunchFresh()}
         >
           {step === 'publish' ? 'Publishing Option Coin…' : step === 'vault' ? 'Creating Vault…' : 'Launch Series (2 tx)'}

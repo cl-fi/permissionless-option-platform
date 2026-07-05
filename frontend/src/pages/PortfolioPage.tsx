@@ -51,11 +51,13 @@ export function PortfolioPage() {
         <div className="mt-4 grid gap-3">
           {written.data?.map(({ vaultOwner, series }) => {
             const pendingAction =
-              series.lifecycle === 'exercise_window'
-                ? 'claim'
-                : series.lifecycle === 'withdrawal_open'
-                  ? 'withdraw'
-                  : null
+              series.lifecycle === 'pre_expiry'
+                ? 'write'
+                : series.lifecycle === 'exercise_window'
+                  ? 'claim'
+                  : series.lifecycle === 'withdrawal_open'
+                    ? 'withdraw'
+                    : null
             return (
               <Link
                 key={vaultOwner.objectId}
@@ -67,6 +69,9 @@ export function PortfolioPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <DirectionBadge direction={series.direction} />
                   <LifecycleBadge state={series.lifecycle} />
+                  {pendingAction === 'write' && (
+                    <span className="badge bg-accent/15 text-accent">Write collateral</span>
+                  )}
                   {pendingAction === 'claim' && (
                     <span className="badge bg-accent/15 text-accent">Claim Proceeds</span>
                   )}
@@ -82,6 +87,13 @@ export function PortfolioPage() {
                     series.underlying.symbol,
                   )}
                 </p>
+                {pendingAction === 'write' && (
+                  <p className="mt-2 text-sm text-muted">
+                    Minted:{' '}
+                    {formatAmount(series.mintedSupply, series.underlying.decimals)}{' '}
+                    {series.underlying.symbol} · tap to write more
+                  </p>
+                )}
               </Link>
             )
           })}

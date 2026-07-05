@@ -14,6 +14,7 @@ import type {
 } from './types'
 
 function parseTypeNameField(name: unknown): string | null {
+  if (typeof name === 'string') return name
   if (!name || typeof name !== 'object') return null
   const value = (name as { value?: unknown }).value
   if (typeof value === 'string') return value
@@ -21,11 +22,39 @@ function parseTypeNameField(name: unknown): string | null {
     const inner = (value as { name?: unknown }).name
     if (typeof inner === 'string') return inner
   }
+  if ('fields' in (name as object)) {
+    const nested = parseTypeNameField(
+      (name as { fields: Record<string, unknown> }).fields.name,
+    )
+    if (nested) return nested
+  }
   if ('name' in (name as object)) {
     const direct = (name as { name?: unknown }).name
     if (typeof direct === 'string') return direct
   }
   return null
+}
+
+/** Normalize coin type strings so VaultOwner and Marketplace keys match. */
+export function normalizeCoinType(coinType: string): string {
+  const parts = coinType.split('::')
+  if (parts.length !== 3) return coinType
+  let [addr, module, name] = parts
+  // Move TypeName stores package addresses without the 0x prefix.
+  if (!addr.startsWith('0x') && /^[a-fA-F0-9]+$/.test(addr)) {
+    addr = `0x${addr}`
+  }
+  if (!addr.startsWith('0x')) return coinType
+  try {
+    const normalizedAddr = `0x${BigInt(addr).toString(16)}`
+    return `${normalizedAddr}::${module}::${name}`
+  } catch {
+    return coinType
+  }
+}
+
+export function coinTypesEqual(a: string, b: string): boolean {
+  return normalizeCoinType(a) === normalizeCoinType(b)
 }
 
 function extractCoinTypesFromVaultType(
@@ -231,7 +260,7 @@ export async function fetchSeriesByOptionCoinType(
   nowMs = BigInt(Date.now()),
 ): Promise<VaultState | null> {
   const all = await fetchAllSeries(client, nowMs)
-  return all.find((s) => s.optionCoinType === optionCoinType) ?? null
+  return all.find((s) => coinTypesEqual(s.optionCoinType, optionCoinType)) ?? null
 }
 
 export function encodeOptionCoinTypeName(optionCoinType: string) {
@@ -258,14 +287,9 @@ export async function fetchVaultOwnersForAddress(
       const content = item.data?.content
       if (!content || content.dataType !== 'moveObject') return null
       const fields = content.fields as Record<string, unknown>
-      const typeName = fields.option_coin_type
-      let optionCoinType = ''
-      if (typeName && typeof typeName === 'object' && 'fields' in typeName) {
-        optionCoinType = fieldString(
-          (typeName as { fields: Record<string, unknown> }).fields,
-          'name',
-        )
-      }
+      const optionCoinType = normalizeCoinType(
+        parseTypeNameField(fields.option_coin_type) ?? '',
+      )
       return {
         objectId: item.data!.objectId,
         optionCoinType,
@@ -284,9 +308,14 @@ export async function fetchWrittenSeries(
     fetchAllSeries(client, nowMs),
   ])
   const byType = new Map(allSeries.map((s) => [s.optionCoinType, s]))
+  const byNormalizedType = new Map(
+    allSeries.map((s) => [normalizeCoinType(s.optionCoinType), s]),
+  )
   return owners
     .map((vaultOwner) => {
-      const series = byType.get(vaultOwner.optionCoinType)
+      const series =
+        byType.get(vaultOwner.optionCoinType) ??
+        byNormalizedType.get(normalizeCoinType(vaultOwner.optionCoinType))
       if (!series) return null
       return { vaultOwner, series }
     })
