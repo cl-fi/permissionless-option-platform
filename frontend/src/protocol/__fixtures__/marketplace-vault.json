@@ -1,0 +1,33 @@
+{
+  "type": "0xbfa6bd48a5dac421fc20390d3909ce7a8ddce08d0a020cb907e390f33319c7b0::tokensmith::OptionVault<0x0ba87d5477f2ff33f9c51b479329a73736e0f1eb847db96ab902a80ef09ae9eb::mock_coin::MOCK_COIN, 0x0ba87d5477f2ff33f9c51b479329a73736e0f1eb847db96ab902a80ef09ae9eb::mock_usdc::MOCK_USDC, 0xdeadbeef::tsdemo01::TSDEMO01>",
+  "nowMs": 1700000000000,
+  "fields": {
+    "option_type": 0,
+    "asset_balance": {
+      "type": "0x2::balance::Balance<0x0ba87d5477f2ff33f9c51b479329a73736e0f1eb847db96ab902a80ef09ae9eb::mock_coin::MOCK_COIN>",
+      "fields": { "value": "500000000" }
+    },
+    "usdc_balance": {
+      "type": "0x2::balance::Balance<0x0ba87d5477f2ff33f9c51b479329a73736e0f1eb847db96ab902a80ef09ae9eb::mock_usdc::MOCK_USDC>",
+      "fields": { "value": "0" }
+    },
+    "exercise_price": {
+      "type": "0xbfa6bd48a5dac421fc20390d3909ce7a8ddce08d0a020cb907e390f33319c7b0::tokensmith::ExercisePrice",
+      "fields": {
+        "numerator": "65000",
+        "denominator": "1"
+      }
+    },
+    "expire_date": "1700003600000",
+    "owner": "0xabc123",
+    "treasury_cap": {
+      "type": "0x2::coin::TreasuryCap<0xdeadbeef::tsdemo01::TSDEMO01>",
+      "fields": {
+        "id": { "id": "0xtcap" },
+        "total_supply": { "value": "500000000" }
+      }
+    },
+    "asset_decimals": 8,
+    "usdc_decimals": 6
+  }
+}

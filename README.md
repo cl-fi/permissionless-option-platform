@@ -1,50 +1,56 @@
-# Permissionless Option Platform
-*Revolutionizing on-chain options trading through permissionless creation and tokenized derivatives*
+# Permissionless Option Platform (TokenSmith)
 
-## Introduction
+A Sui-based protocol where anyone can create, write, and exercise fully-collateralized, tokenized European options on any Sui coin — no platform approval required.
 
-### The Challenge
-The cryptocurrency options market faces several critical challenges:
-- Traditional on-chain options platforms struggle with user retention beyond initial token incentives
-- Complex options concepts create high barriers to entry
-- Existing solutions focus mainly on major assets, leaving a gap in long-tail asset markets
-- Centralized platforms dominate BTC/ETH options trading
+## Live demo
 
-### Our Vision
-The Permissionless Option Platform reimagines on-chain options trading by:
-- Embracing blockchain's permissionless nature
-- Supporting long-tail assets that traditional platforms ignore
-- Simplifying options creation and trading through tokenization
-- Enabling novel use cases beyond traditional risk hedging
+Deploy the frontend from `frontend/` to Vercel (see [frontend/README.md](frontend/README.md)).
+
+## Architecture
+
+```
+tokensmith/          Move protocol (testnet deployment in Published.toml)
+mock_coin/           MBTC + MUSDC test coins with shared TreasuryCaps
+mock_option/         Option Coin bytecode template source
+frontend/
+  src/protocol/      Single seam: config, domain math, RPC parsers, tx builders
+  src/pages/         React UI (Marketplace, Create, Portfolio, Faucet, Series detail)
+scripts/             Legacy tx scripts + seed_demo_series.ts
+```
+
+The frontend reads Sui RPC directly (Marketplace dynamic fields for Series discovery). Series Launch patches `mock_option` bytecode in-browser per [ADR 0001](docs/adr/0001-frontend-publishes-option-coins-via-bytecode-template.md).
+
+## Canonical testnet IDs
+
+| Object | ID |
+|--------|-----|
+| tokensmith package | `0xbfa6bd48a5dac421fc20390d3909ce7a8ddce08d0a020cb907e390f33319c7b0` |
+| Marketplace | `0x5a4a826dee99a1486c26895c6cb00dbea8aa3b43d72cb655125564c77f8092ca` |
+| mock_coin package | `0x0ba87d5477f2ff33f9c51b479329a73736e0f1eb847db96ab902a80ef09ae9eb` |
+
+Domain vocabulary: [CONTEXT.md](CONTEXT.md)
+
+## Quick start (frontend)
+
+```bash
+cd frontend && pnpm install && pnpm dev
+```
 
 ## Why Choose Us?
 
-### 🎯 Permissionless Creation
+### Permissionless Creation
 - Create options for any Sui-based asset without platform approval
 - Support for both covered calls and puts
 - Fully collateralized to ensure security
-- Democratic access to options creation
 
-### 🔄 Tokenized Options
-- Options exist as tradable tokens
+### Tokenized Options
+- Options exist as tradable Sui coins
 - Seamless integration with AMMs and DEXes
-- Enhanced liquidity through secondary market trading
-- Familiar trading experience for crypto users
 
-### 🛡️ Built-in Safety
+### Built-in Safety
 - Fully collateralized positions
-- European-style exercise (only at expiration)
+- European-style exercise (only after Expiry)
 
-## Key Use Cases
+## License
 
-### 1. Launch Pad Incentives
-- Replace direct token distributions with options
-- Create healthier token economics
-- Align stakeholder interests
-- Reduce immediate selling pressure
-
-### 2. Strategic Airdrops
-- Options-based airdrops instead of direct tokens
-- Better price stability
-- Enhanced community engagement
-- Reduced market manipulation
+See [LICENSE](LICENSE).

@@ -1,4 +1,6 @@
 integration_test/node_modules
+frontend/node_modules
+frontend/dist
 tokensmith/build
 mock_coin/build
 mock_option/build
